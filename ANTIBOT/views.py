@@ -2,40 +2,61 @@ import inspect
 import logging
 import os
 import threading
+import time
 
 import telebot
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from telebot.apihelper import ApiTelegramException
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from ANTIBOT.models import TelegramUsers, Channels
+from TelegramBots import settings
 
 load_dotenv()
 
 TOKEN = os.getenv("TOKEN_ANTIBOT")
 
+URL = settings.URL
+
+WEBHOOK_URL = URL + "antibot/webhook/"
+
 Bot = telebot.TeleBot(TOKEN)
 
 CHANNEL_ID = -1002033981480
+
+logger = logging.getLogger('django')
 
 
 class Console:
     botThread = None
 
     @staticmethod
-    def bot_polling():
-        Bot.polling(none_stop=True, interval=0)
+    def set_webhook():
+        Bot.remove_webhook()
+        time.sleep(5)
+        Bot.set_webhook(url=WEBHOOK_URL)
+
+    @staticmethod
+    @csrf_exempt
+    def webhook(request):
+        if request.method == "POST":
+            json_string = request.body.decode("utf-8")
+            update = telebot.types.Update.de_json(json_string)
+            Bot.process_new_updates([update])
+            return JsonResponse({"status": "ok"})
 
     @staticmethod
     def run(request):
         if Console.botThread is not None:
             if not Console.botThread.is_alive():
-                Console.botThread = threading.Thread(target=Console.bot_polling)
+                Console.botThread = threading.Thread(target=Console.set_webhook())
                 Console.botThread.start()
         else:
-            Console.botThread = threading.Thread(target=Console.bot_polling)
+            Console.botThread = threading.Thread(target=Console.set_webhook())
             Console.botThread.start()
         print(f'Bot is now running in a separate thread.')
         return redirect('ANTIBOT:console')
@@ -44,7 +65,7 @@ class Console:
     def stop(request):
         if Console.botThread is not None:
             if Console.botThread.is_alive():
-                Bot.stop_polling()
+                Bot.delete_webhook()
         print(f'Bot is now stopping in a separate thread.')
         return redirect('ANTIBOT:console')
 
@@ -120,6 +141,6 @@ def send_error_for_admins(message, ex, method_name):
            f"Method: {method_name}\n" \
            f"Error type: {type(ex).__name__}\n" \
            f"Error message: {str(ex)}\n"
-    logging.error(text)
+    logger.error(text)
     for admin in admins:
         Bot.send_message(admin.id, text)

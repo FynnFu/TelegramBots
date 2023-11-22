@@ -3,10 +3,13 @@ import json
 import os
 import threading
 import logging
+import time
 import traceback
 
 import telebot
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from django.db import transaction
 from django.contrib.sites.models import Site
@@ -24,7 +27,20 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN_GPT")
 
+URL = settings.URL
+
+WEBHOOK_URL = URL + "chatgpt/webhook/"
+
 Bot = telebot.TeleBot(TOKEN)
+
+commands = [
+    BotCommand('start', '🔄 Запустить/перезапустить бота'),
+    BotCommand('ref', "📨 Приглашение"),
+    BotCommand('promocode', "🔑 Ввести промокод"),
+    BotCommand('start_new_dialog', "➕ Начать новый диалог"),
+]
+
+Bot.set_my_commands(commands)
 
 client = OpenAI(api_key=settings.API_KEY)
 
@@ -35,15 +51,19 @@ class Console:
     botThread = None
 
     @staticmethod
-    def bot_polling():
-        commands = [
-            BotCommand('start', '🔄 Запустить/перезапустить бота'),
-            BotCommand('ref', "📨 Приглашение"),
-            BotCommand('promocode', "🔑 Ввести промокод"),
-            BotCommand('start_new_dialog', "➕ Начать новый диалог"),
-        ]
-        Bot.set_my_commands(commands)
-        Bot.polling(none_stop=True, interval=0)
+    def set_webhook():
+        Bot.remove_webhook()
+        time.sleep(5)
+        Bot.set_webhook(url=WEBHOOK_URL)
+
+    @staticmethod
+    @csrf_exempt
+    def webhook(request):
+        if request.method == "POST":
+            json_string = request.body.decode("utf-8")
+            update = telebot.types.Update.de_json(json_string)
+            Bot.process_new_updates([update])
+            return JsonResponse({"status": "ok"})
 
     @staticmethod
     def status():
@@ -57,10 +77,10 @@ class Console:
     def run(request):
         if Console.botThread is not None:
             if not Console.botThread.is_alive():
-                Console.botThread = threading.Thread(target=Console.bot_polling)
+                Console.botThread = threading.Thread(target=Console.set_webhook())
                 Console.botThread.start()
         else:
-            Console.botThread = threading.Thread(target=Console.bot_polling)
+            Console.botThread = threading.Thread(target=Console.set_webhook())
             Console.botThread.start()
         print(f'Bot is now running in a separate thread.')
         return redirect('ChatGPT:console')
@@ -69,7 +89,7 @@ class Console:
     def stop(request):
         if Console.botThread is not None:
             if Console.botThread.is_alive():
-                Bot.stop_polling()
+                Bot.delete_webhook()
         print(f'Bot is now stopping in a separate thread.')
         return redirect('ChatGPT:console')
 

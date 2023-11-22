@@ -27,16 +27,20 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 API_KEY = os.getenv("API_KEY")
 
+DB_NAME = os.getenv("DB_NAME")
+
 DB_USER = os.getenv("DB_USER")
 
 DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+URL = os.getenv("URL")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 LOGGING = LOGGING
 
-ALLOWED_HOSTS = ['.awsapprunner.com', 'fynnfu.ru', '127.0.0.1']
+ALLOWED_HOSTS = ['.awsapprunner.com', 'fynnfu.ru', '127.0.0.1', '.ngrok-free.app']
 
 # Application definition
 
@@ -94,8 +98,8 @@ WSGI_APPLICATION = 'TelegramBots.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': f'telegrambots-db',
-        'USER': f'{DB_USER}',
+        'NAME': DB_NAME,
+        'USER': DB_USER,
         'PASSWORD': DB_PASSWORD,
         'HOST': 'localhost',
         'PORT': 3306
@@ -157,6 +161,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SITE_ID = 1
 
 CRONJOBS = [
-    ('*/10 * * * *', 'ChatGPT.cron.every_ten_minutes_update'),  # каждые 10 минут
     ('0 0 * * *', 'ChatGPT.cron.everyday_update'),  # каждый день в 00:00
 ]

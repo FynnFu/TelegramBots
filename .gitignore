@@ -6,3 +6,7 @@ media
 static
 venv
 .idea
+ANTIBOT/.env
+ChatGPT/.env
+ZangerKZ/.env
+TelegramBots/.env

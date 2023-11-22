@@ -2,11 +2,13 @@ import inspect
 import logging
 import os
 import threading
+import time
 
-import openai
 import telebot
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from openai import RateLimitError, OpenAI
 from telebot import types
@@ -18,26 +20,43 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN_ZANGERKZ")
 
+URL = settings.URL
+
+WEBHOOK_URL = URL + "zangerkz/webhook/"
+
 Bot = telebot.TeleBot(TOKEN)
 
 client = OpenAI(api_key=settings.API_KEY)
+
+logger = logging.getLogger('django')
 
 
 class Console:
     botThread = None
 
     @staticmethod
-    def bot_polling():
-        Bot.polling(none_stop=True, interval=0)
+    def set_webhook():
+        Bot.remove_webhook()
+        time.sleep(5)
+        Bot.set_webhook(url=WEBHOOK_URL)
+
+    @staticmethod
+    @csrf_exempt
+    def webhook(request):
+        if request.method == "POST":
+            json_string = request.body.decode("utf-8")
+            update = telebot.types.Update.de_json(json_string)
+            Bot.process_new_updates([update])
+            return JsonResponse({"status": "ok"})
 
     @staticmethod
     def run(request):
         if Console.botThread is not None:
             if not Console.botThread.is_alive():
-                Console.botThread = threading.Thread(target=Console.bot_polling)
+                Console.botThread = threading.Thread(target=Console.set_webhook())
                 Console.botThread.start()
         else:
-            Console.botThread = threading.Thread(target=Console.bot_polling)
+            Console.botThread = threading.Thread(target=Console.set_webhook())
             Console.botThread.start()
         print(f'Bot is now running in a separate thread.')
         return redirect('ZangerKZ:console')
@@ -151,7 +170,9 @@ def save_review(call):
     review.save()
 
     Bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.id, reply_markup=None)
-    Bot.send_message(call.message.reply_to_message.from_user.id, "Спасибо за ваш отзыв", reply_markup=menu(call.message))
+    Bot.send_message(call.message.reply_to_message.from_user.id,
+                     "Спасибо за ваш отзыв",
+                     reply_markup=menu(call.message))
 
 
 def generate_gpt_response(prompt, message):
@@ -204,7 +225,7 @@ def send_error_for_admins(message, ex, method_name):
            f"Method: {method_name}\n" \
            f"Error type: {type(ex).__name__}\n" \
            f"Error message: {str(ex)}\n"
-    logging.error(text)
+    logger.error(text)
     for admin in admins:
         Bot.send_message(admin.id, text)
     print(text)
