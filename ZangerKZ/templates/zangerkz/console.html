@@ -1,0 +1,17 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+{% block title %}
+    {{ bot_name }} Console
+{% endblock %}
+{% block extrastyle %}
+{% endblock %}
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        {% block breadcrumb %}{% endblock %}
+    </div>
+{% endblock %}
+{% block content %}
+    <h1>{{ bot_name }} Console</h1>
+    <a href="{% url 'ZangerKZ:run' %}"><button>Запуск бота</button></a>
+    <a href="{% url 'ZangerKZ:stop' %}"><button>Остановить бота</button></a>
+{% endblock %}

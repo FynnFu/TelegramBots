@@ -1,0 +1,10 @@
+from django.urls import path
+from .views import Console
+
+app_name = "ANTIBOT"
+
+urlpatterns = [
+    path('console/', Console.render, name='console'),
+    path('run/', Console.run, name='run'),
+    path('stop/', Console.stop, name='stop')
+]
