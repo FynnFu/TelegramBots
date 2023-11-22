@@ -94,7 +94,7 @@ WSGI_APPLICATION = 'TelegramBots.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': f'{DB_USER}_db',
+        'NAME': f'telegrambots-db',
         'USER': f'{DB_USER}',
         'PASSWORD': DB_PASSWORD,
         'HOST': 'localhost',
