@@ -19,6 +19,7 @@ from telebot import types
 from telebot.types import BotCommand, LabeledPrice
 from dotenv import load_dotenv
 from telegram import constants
+from telegram.helpers import escape_markdown
 
 from TelegramBots import settings
 from ChatGPT.models import TelegramUsers, Promocodes, Channels, GPTModels, Prices, Tips
@@ -652,10 +653,12 @@ def handle_messages(message):
                                                      user.get_model().slug,
                                                      message)
 
-                characters = {'_', '*', '[', ']', '(', ')', '~', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'}
+                # characters = {'_', '*', '[', ']', '(', ')', '~', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'}
+                #
+                # for character in characters:
+                #     gpt_response = gpt_response.replace(character, f'\\{character}')
 
-                for character in characters:
-                    gpt_response = gpt_response.replace(character, f'\\{character}')
+                gpt_response = escape_markdown(gpt_response, version=2, entity_type="code")
 
                 if user.get_rpd_bonus() > 0:
                     user.remove_rpd_bonus(1)
@@ -702,4 +705,3 @@ def text_to_error_html(error_details):
             file.write(str(error_details))
     except Exception as ex:
         logger.error(ex)
-

@@ -1,73 +1,12 @@
 Traceback (most recent call last):
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/backends/utils.py", line 89, in _execute
-    return self.cursor.execute(sql, params)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/backends/mysql/base.py", line 75, in execute
-    return self.cursor.execute(query, args)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/cursors.py", line 153, in execute
-    result = self._query(query)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/cursors.py", line 322, in _query
-    conn.query(q)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/connections.py", line 558, in query
-    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/connections.py", line 822, in _read_query_result
-    result.read()
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/connections.py", line 1200, in read
-    first_packet = self.connection._read_packet()
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/connections.py", line 772, in _read_packet
-    packet.raise_for_error()
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/protocol.py", line 221, in raise_for_error
-    err.raise_mysql_exception(self._data)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/err.py", line 143, in raise_mysql_exception
-    raise errorclass(errno, errval)
-pymysql.err.IntegrityError: (1062, "Duplicate entry '2011827821' for key 'chatgpt_telegramusers.PRIMARY'")
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/ChatGPT/views.py", line 134, in wrapper
-    user.save()
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/models/base.py", line 814, in save
-    self.save_base(
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/models/base.py", line 877, in save_base
-    updated = self._save_table(
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/models/base.py", line 1020, in _save_table
-    results = self._do_insert(
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/models/base.py", line 1061, in _do_insert
-    return manager._insert(
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/models/manager.py", line 87, in manager_method
-    return getattr(self.get_queryset(), name)(*args, **kwargs)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/models/query.py", line 1805, in _insert
-    return query.get_compiler(using=using).execute_sql(returning_fields)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1822, in execute_sql
-    cursor.execute(sql, params)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/backends/utils.py", line 102, in execute
-    return super().execute(sql, params)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/backends/utils.py", line 67, in execute
-    return self._execute_with_wrappers(
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/backends/utils.py", line 80, in _execute_with_wrappers
-    return executor(sql, params, many, context)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/backends/utils.py", line 84, in _execute
-    with self.db.wrap_database_errors:
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
-    raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/backends/utils.py", line 89, in _execute
-    return self.cursor.execute(sql, params)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/backends/mysql/base.py", line 75, in execute
-    return self.cursor.execute(query, args)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/cursors.py", line 153, in execute
-    result = self._query(query)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/cursors.py", line 322, in _query
-    conn.query(q)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/connections.py", line 558, in query
-    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/connections.py", line 822, in _read_query_result
-    result.read()
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/connections.py", line 1200, in read
-    first_packet = self.connection._read_packet()
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/connections.py", line 772, in _read_packet
-    packet.raise_for_error()
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/protocol.py", line 221, in raise_for_error
-    err.raise_mysql_exception(self._data)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/pymysql/err.py", line 143, in raise_mysql_exception
-    raise errorclass(errno, errval)
-django.db.utils.IntegrityError: (1062, "Duplicate entry '2011827821' for key 'chatgpt_telegramusers.PRIMARY'")
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/ChatGPT/views.py", line 674, in handle_messages
+    Bot.edit_message_text(chat_id=message.from_user.id,
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/telebot/__init__.py", line 3839, in edit_message_text
+    result = apihelper.edit_message_text(self.token, text, chat_id, message_id, inline_message_id, parse_mode,
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/telebot/apihelper.py", line 1327, in edit_message_text
+    return _make_request(token, method_url, params=payload, method='post')
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/telebot/apihelper.py", line 162, in _make_request
+    json_result = _check_result(method_name, result)
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/telebot/apihelper.py", line 189, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: can't parse entities: Character '.' is reserved and must be escaped with the preceding '\'
