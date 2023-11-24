@@ -33,6 +33,8 @@ DB_USER = os.getenv("DB_USER")
 
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
+DB_HOST = os.getenv("DB_HOST")
+
 URL = os.getenv("URL")
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -101,7 +103,7 @@ DATABASES = {
         'NAME': DB_NAME,
         'USER': DB_USER,
         'PASSWORD': DB_PASSWORD,
-        'HOST': 'localhost',
+        'HOST': DB_HOST,
         'PORT': 3306
     }
 }

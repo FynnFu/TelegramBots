@@ -1,12 +1,14 @@
 Traceback (most recent call last):
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/ChatGPT/views.py", line 674, in handle_messages
-    Bot.edit_message_text(chat_id=message.from_user.id,
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/telebot/__init__.py", line 3839, in edit_message_text
-    result = apihelper.edit_message_text(self.token, text, chat_id, message_id, inline_message_id, parse_mode,
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/telebot/apihelper.py", line 1327, in edit_message_text
-    return _make_request(token, method_url, params=payload, method='post')
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/telebot/apihelper.py", line 162, in _make_request
-    json_result = _check_result(method_name, result)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/telebot/apihelper.py", line 189, in _check_result
-    raise ApiTelegramException(method_name, result, result_json)
-telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: can't parse entities: Character '.' is reserved and must be escaped with the preceding '\'
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/ChatGPT/views.py", line 522, in generate_gpt_response
+    completion = client.chat.completions.create(
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/openai/_utils/_utils.py", line 299, in wrapper
+    return func(*args, **kwargs)
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/openai/resources/chat/completions.py", line 594, in create
+    return self._post(
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/openai/_base_client.py", line 1055, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/openai/_base_client.py", line 834, in request
+    return self._request(
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/openai/_base_client.py", line 877, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.AuthenticationError: Error code: 401 - {'error': {'message': 'Incorrect API key provided: sk-AM6DF***************************************QqW7. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}

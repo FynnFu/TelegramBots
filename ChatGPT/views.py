@@ -669,13 +669,13 @@ def handle_messages(message):
                     for x in range(0, len(gpt_response), 4095):
                         Bot.edit_message_text(chat_id=message.from_user.id,
                                               message_id=thinking_message.message_id,
-                                              text=gpt_response[x:x + 4095],
-                                              parse_mode=constants.ParseMode.MARKDOWN_V2)
+                                              text=gpt_response[x:x + 4095],)
+                                              # parse_mode=constants.ParseMode.MARKDOWN_V2)
                 else:
                     Bot.edit_message_text(chat_id=message.from_user.id,
                                           message_id=thinking_message.message_id,
-                                          text=gpt_response,
-                                          parse_mode=constants.ParseMode.MARKDOWN_V2)
+                                          text=gpt_response,)
+                                          # parse_mode=constants.ParseMode.MARKDOWN_V2)
 
                 user.add_message("assistant", gpt_response)
 
