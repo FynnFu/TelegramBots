@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import Console
+from .views import *
 
 app_name = "ChatGPT"
 
@@ -8,5 +9,5 @@ urlpatterns = [
     path('run/', Console.run, name='run'),
     path('stop/', Console.stop, name='stop'),
     path('error/', Console.error, name='error'),
-    path("webhook/", Console.webhook, name="webhook"),
+    path("webhook/", Console.webhook, name="webhook")
 ]

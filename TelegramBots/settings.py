@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 from .configuration import LOGGING
 
@@ -34,8 +35,6 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 DB_HOST = os.getenv("DB_HOST")
-
-URL = os.getenv("URL")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -160,8 +159,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SITE_ID = 1
-
 CRONJOBS = [
     ('0 0 * * *', 'ChatGPT.cron.everyday_update'),  # каждый день в 00:00
 ]
+
+SITE_ID = 1

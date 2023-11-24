@@ -28,7 +28,7 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN_GPT")
 
-URL = settings.URL
+URL = Site.objects.get_current().domain
 
 WEBHOOK_URL = URL + "chatgpt/webhook/"
 
@@ -616,9 +616,8 @@ def send_error_for_admins(message, ex, method_name, error_details):
            f"Error message: {str(ex)}\n"
     logger.error(text)
     markup = types.InlineKeyboardMarkup()
-    host = Site.objects.get_current()
     markup.add(
-        types.InlineKeyboardButton(text="Страница с ошибкой", url=f"{host}{reverse(f'ChatGPT:error')}")
+        types.InlineKeyboardButton(text="Страница с ошибкой", url=f"{URL}{reverse(f'ChatGPT:error')}")
     )
     text_to_error_html(error_details)
     for admin in admins:
