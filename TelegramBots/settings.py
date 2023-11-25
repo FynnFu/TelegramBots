@@ -45,7 +45,7 @@ ALLOWED_HOSTS = ['.awsapprunner.com', 'fynnfu.ru', '127.0.0.1', '.ngrok-free.app
 
 CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app', 'https://127.0.0.1']
 
-CSRF_COOKIE_DOMAIN = 'ngrok-free.app'
+# CSRF_COOKIE_DOMAIN = 'ngrok-free.app'
 # Application definition
 
 INSTALLED_APPS = [
