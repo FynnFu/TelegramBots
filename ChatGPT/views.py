@@ -55,6 +55,7 @@ class Console:
     def set_webhook():
         Bot.remove_webhook()
         time.sleep(5)
+        print(WEBHOOK_URL)
         Bot.set_webhook(url=WEBHOOK_URL)
 
     @staticmethod

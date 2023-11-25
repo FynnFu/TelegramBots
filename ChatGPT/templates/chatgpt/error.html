@@ -1,8 +1,14 @@
 Traceback (most recent call last):
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/ChatGPT/views.py", line 129, in wrapper
-    model=GPTModels.objects.get(name="GPT-4")
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/models/manager.py", line 87, in manager_method
-    return getattr(self.get_queryset(), name)(*args, **kwargs)
-  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/django/db/models/query.py", line 637, in get
-    raise self.model.DoesNotExist(
-ChatGPT.models.GPTModels.DoesNotExist: GPTModels matching query does not exist.
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/ChatGPT/views.py", line 522, in generate_gpt_response
+    completion = client.chat.completions.create(
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/openai/_utils/_utils.py", line 299, in wrapper
+    return func(*args, **kwargs)
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/openai/resources/chat/completions.py", line 594, in create
+    return self._post(
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/openai/_base_client.py", line 1055, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/openai/_base_client.py", line 834, in request
+    return self._request(
+  File "/Users/fynnfu/PycharmProjects/TelegramBots/venv/lib/python3.10/site-packages/openai/_base_client.py", line 877, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.AuthenticationError: Error code: 401 - {'error': {'message': 'Incorrect API key provided: sk-FGeEf***************************************EZBu. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
