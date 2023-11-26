@@ -8,3 +8,7 @@ venv
 .idea
 cert.pem
 key.pem
+TelegramBots/.env
+ChatGPT/.env
+ANTIBOT/.env
+ZangerKZ/.env
