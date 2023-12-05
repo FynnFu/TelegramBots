@@ -26,6 +26,17 @@ class TelegramUsers(models.Model):
         self.messages = json.dumps(messages)
         self.save()
 
+    def ban(self):
+        self.blocked = True
+        self.save()
+
+    def unban(self):
+        self.blocked = False
+        self.save()
+
+    def is_blocked(self):
+        return self.blocked
+
     def __str__(self):
         return str(self.id)
 
