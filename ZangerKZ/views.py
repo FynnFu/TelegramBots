@@ -8,7 +8,7 @@ import traceback
 import mysql.connector
 
 import telebot
-from django.contrib.sites.models import Site
+# from django.contrib.sites.models import Site
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
@@ -27,8 +27,9 @@ TOKEN = os.getenv("TOKEN_ZANGERKZ")
 
 API_KEY = os.getenv("ZANGERKZ_API_KEY")
 
-URL = Site.objects.get_current().domain
+# URL = Site.objects.get_current().domain
 
+URL = ''
 WEBHOOK_URL = URL + "zangerkz/webhook/"
 
 Bot = telebot.TeleBot(TOKEN)
@@ -189,6 +190,7 @@ def agree(call):
                 messages='[]'
             )
             user.save()
+            time.sleep(1)
 
         Bot.send_message(call.from_user.id,
                          "Привет! 🤖 Я - ZangerKZ, твой юридический помощник от KazNU! 🌐 \n"
