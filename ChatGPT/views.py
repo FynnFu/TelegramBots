@@ -1,13 +1,16 @@
 import inspect
 import json
 import os
+import subprocess
 import threading
 import logging
 import time
 import traceback
+import mysql.connector
 
 import telebot
 
+from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
@@ -28,6 +31,8 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN_GPT")
 
+API_KEY = os.getenv("GPT_API_KEY")
+
 URL = Site.objects.get_current().domain
 
 WEBHOOK_URL = URL + "chatgpt/webhook/"
@@ -43,9 +48,20 @@ commands = [
 
 Bot.set_my_commands(commands)
 
-client = OpenAI(api_key=settings.API_KEY)
+client = OpenAI(api_key=API_KEY)
 
 logger = logging.getLogger('django')
+
+
+def requires_staff(func):
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if request.user.is_staff:
+                return func(request, *args, **kwargs)
+
+        return redirect(f'{reverse("admin:login")}?next={request.path}')
+
+    return wrapper
 
 
 class Console:
@@ -76,6 +92,7 @@ class Console:
         return text
 
     @staticmethod
+    @requires_staff
     def run(request):
         if Console.botThread is not None:
             if not Console.botThread.is_alive():
@@ -88,6 +105,7 @@ class Console:
         return redirect('ChatGPT:console')
 
     @staticmethod
+    @requires_staff
     def stop(request):
         if Console.botThread is not None:
             if Console.botThread.is_alive():
@@ -96,11 +114,69 @@ class Console:
         return redirect('ChatGPT:console')
 
     @staticmethod
+    def run_command(value, command):
+        if value == 'terminal':
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+            return str(result.stdout), str(result.stderr)
+        if value == 'mysql':
+            connection = mysql.connector.connect(
+                host=settings.DATABASES['default']['HOST'],
+                user=settings.DATABASES['default']['USER'],
+                password=settings.DATABASES['default']['PASSWORD'],
+                database=settings.DATABASES['default']['NAME']
+            )
+            cursor = connection.cursor()
+            try:
+                cursor.execute(command)
+
+                result = cursor.fetchall()
+
+                result = '\n'.join(str(item) for item in result)
+                return str(result), None
+            except Exception as ex:
+                return None, str(ex)
+            finally:
+                if 'connection' in locals() and connection.is_connected():
+                    cursor.close()
+                    connection.close()
+
+    @staticmethod
+    @requires_staff
+    def clear(request):
+        request.session['command_history'] = []
+        request.session.modified = True
+        return redirect('ChatGPT:console')
+
+    @staticmethod
+    @requires_staff
+    def set(request, value):
+        request.session['command_line'] = value
+        return redirect('ChatGPT:console')
+
+    @staticmethod
+    @requires_staff
     def render(request):
         name = Bot.get_my_name().name
         context = {
             'bot_name': name
         }
+        if 'command_line' not in request.session:
+            request.session['command_line'] = 'terminal'
+
+        if request.method == 'POST':
+            command = request.POST.get('command')
+            stdout, stderr = Console.run_command(request.session['command_line'], command)
+            # сохраняем историю выполнения команд в сессии
+            if 'command_history' not in request.session:
+                request.session['command_history'] = []
+
+            request.session['command_history'].append({
+                'command': command,
+                'stdout': stdout,
+                'stderr': stderr,
+            })
+            request.session.modified = True
+
         return render(request, 'chatgpt/console.html', context)
 
     @staticmethod
@@ -609,6 +685,7 @@ def send_error_for_admins(message, ex, method_name, error_details):
                          "⚠️ Произошла непредвиденная ошибка, сообщение об ошибке уже отправлено модерации.\n"
                          "Подождите пару минут и повторите попытку.")
         user_id = message.from_user.id
+    text_to_error_html(error_details)
     admins = TelegramUsers.objects.filter(is_staff=True)
     text = "❗️ Сообщение от системы ❗️\n" \
            f"User ID: {user_id}\n" \
@@ -620,7 +697,6 @@ def send_error_for_admins(message, ex, method_name, error_details):
     markup.add(
         types.InlineKeyboardButton(text="Страница с ошибкой", url=f"{URL}{reverse(f'ChatGPT:error')}")
     )
-    text_to_error_html(error_details)
     for admin in admins:
         Bot.send_message(admin.id, text, reply_markup=markup)
     print(text)
@@ -669,13 +745,13 @@ def handle_messages(message):
                     for x in range(0, len(gpt_response), 4095):
                         Bot.edit_message_text(chat_id=message.from_user.id,
                                               message_id=thinking_message.message_id,
-                                              text=gpt_response[x:x + 4095],)
-                                              # parse_mode=constants.ParseMode.MARKDOWN_V2)
+                                              text=gpt_response[x:x + 4095], )
+                        # parse_mode=constants.ParseMode.MARKDOWN_V2)
                 else:
                     Bot.edit_message_text(chat_id=message.from_user.id,
                                           message_id=thinking_message.message_id,
-                                          text=gpt_response,)
-                                          # parse_mode=constants.ParseMode.MARKDOWN_V2)
+                                          text=gpt_response, )
+                    # parse_mode=constants.ParseMode.MARKDOWN_V2)
 
                 user.add_message("assistant", gpt_response)
 

@@ -12,3 +12,6 @@ TelegramBots/.env
 ChatGPT/.env
 ANTIBOT/.env
 ZangerKZ/.env
+run_ngrok.sh
+run_localhost.sh
+db.sqlite3

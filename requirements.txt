@@ -30,8 +30,10 @@ hyperframe==6.0.1
 idna==3.4
 magic-filter==1.0.12
 multidict==6.0.4
+mysql-connector-python==8.2.0
 netaddr==0.9.0
 openai==1.2.3
+protobuf==4.21.12
 pycparser==2.21
 pydantic==2.4.2
 pydantic_core==2.10.1

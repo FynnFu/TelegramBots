@@ -7,5 +7,8 @@ urlpatterns = [
     path('console/', Console.render, name='console'),
     path('run/', Console.run, name='run'),
     path('stop/', Console.stop, name='stop'),
-    path("webhook/", Console.webhook, name="webhook"),
+    path('clear/', Console.clear, name='clear'),
+    path('set/<str:value>', Console.set, name='set'),
+    path('error/', Console.error, name='error'),
+    path('webhook/', Console.webhook, name='webhook')
 ]

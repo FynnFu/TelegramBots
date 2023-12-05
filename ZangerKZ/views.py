@@ -1,14 +1,18 @@
 import inspect
 import logging
 import os
+import subprocess
 import threading
 import time
+import traceback
+import mysql.connector
 
 import telebot
 from django.contrib.sites.models import Site
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from openai import RateLimitError, OpenAI
@@ -21,15 +25,28 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN_ZANGERKZ")
 
+API_KEY = os.getenv("ZANGERKZ_API_KEY")
+
 URL = Site.objects.get_current().domain
 
 WEBHOOK_URL = URL + "zangerkz/webhook/"
 
 Bot = telebot.TeleBot(TOKEN)
 
-client = OpenAI(api_key=settings.API_KEY)
+client = OpenAI(api_key=API_KEY)
 
 logger = logging.getLogger('django')
+
+
+def requires_staff(func):
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if request.user.is_staff:
+                return func(request, *args, **kwargs)
+
+        return redirect(f'{reverse("admin:login")}?next={request.path}')
+
+    return wrapper
 
 
 class Console:
@@ -51,6 +68,7 @@ class Console:
             return JsonResponse({"status": "ok"})
 
     @staticmethod
+    @requires_staff
     def run(request):
         if Console.botThread is not None:
             if not Console.botThread.is_alive():
@@ -63,6 +81,7 @@ class Console:
         return redirect('ZangerKZ:console')
 
     @staticmethod
+    @requires_staff
     def stop(request):
         if Console.botThread is not None:
             if Console.botThread.is_alive():
@@ -71,46 +90,115 @@ class Console:
         return redirect('ZangerKZ:console')
 
     @staticmethod
+    def run_command(value, command):
+        if value == 'terminal':
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+            return str(result.stdout), str(result.stderr)
+        if value == 'mysql':
+            connection = mysql.connector.connect(
+                host=settings.DATABASES['default']['HOST'],
+                user=settings.DATABASES['default']['USER'],
+                password=settings.DATABASES['default']['PASSWORD'],
+                database=settings.DATABASES['default']['NAME']
+            )
+            cursor = connection.cursor()
+            try:
+                cursor.execute(command)
+
+                result = cursor.fetchall()
+
+                result = '\n'.join(str(item) for item in result)
+                return str(result), None
+            except Exception as ex:
+                return None, str(ex)
+            finally:
+                if 'connection' in locals() and connection.is_connected():
+                    cursor.close()
+                    connection.close()
+
+    @staticmethod
+    @requires_staff
+    def clear(request):
+        request.session['command_history'] = []
+        request.session.modified = True
+        return redirect('ZangerKZ:console')
+
+    @staticmethod
+    @requires_staff
+    def set(request, value):
+        request.session['command_line'] = value
+        return redirect('ZangerKZ:console')
+
+    @staticmethod
+    @requires_staff
     def render(request):
         name = Bot.get_my_name().name
         context = {
             'bot_name': name
         }
+        if 'command_line' not in request.session:
+            request.session['command_line'] = 'terminal'
+
+        if request.method == 'POST':
+            command = request.POST.get('command')
+            stdout, stderr = Console.run_command(request.session['command_line'], command)
+            # сохраняем историю выполнения команд в сессии
+            if 'command_history' not in request.session:
+                request.session['command_history'] = []
+
+            request.session['command_history'].append({
+                'command': command,
+                'stdout': stdout,
+                'stderr': stderr,
+            })
+            request.session.modified = True
+
         return render(request, 'zangerkz/console.html', context)
+
+    @staticmethod
+    def error(request):
+        return render(request, 'zangerkz/error.html')
 
 
 @Bot.message_handler(commands=['start'])
 def start(message):
-    markup = types.InlineKeyboardMarkup()
-    btn1 = types.InlineKeyboardButton(text='Я согласен(-на) ✅', callback_data='agree')
-    markup.add(btn1)
-    Bot.send_message(message.from_user.id, "Данный бот находится на этапе разработки!\n"
-                                           "Для улучшения качества сервиса происходит сбор данных, "
-                                           "для продолжения нужно Ваше согласие", reply_markup=markup)
+    try:
+        markup = types.InlineKeyboardMarkup()
+        btn1 = types.InlineKeyboardButton(text='Я согласен(-на) ✅', callback_data='agree')
+        markup.add(btn1)
+        Bot.send_message(message.from_user.id, "Данный бот находится на этапе разработки!\n"
+                                               "Для улучшения качества сервиса происходит сбор данных, "
+                                               "для продолжения нужно Ваше согласие", reply_markup=markup)
+
+    except Exception as ex:
+        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
 
 
 @Bot.callback_query_handler(func=lambda call: call.data == 'agree')
 @transaction.atomic
 def agree(call):
-    if not TelegramUsers.objects.filter(id=call.from_user.id).exists():
-        user = TelegramUsers(
-            id=call.from_user.id,
-            username=call.from_user.username,
-            first_name=call.from_user.first_name,
-            last_name=call.from_user.last_name,
-            blocked=False,
-            is_staff=False,
-            messages='[]'
-        )
-        user.save()
+    try:
+        if not TelegramUsers.objects.filter(id=call.from_user.id).exists():
+            user = TelegramUsers(
+                id=call.from_user.id,
+                username=call.from_user.username,
+                first_name=call.from_user.first_name,
+                last_name=call.from_user.last_name,
+                blocked=False,
+                is_staff=False,
+                messages='[]'
+            )
+            user.save()
 
-    Bot.send_message(call.from_user.id,
-                     "Привет! 🤖 Я - ZangerKZ, твой юридический помощник от KazNU! 🌐 \n"
-                     "\n"
-                     "Можешь задавать любые юридические вопросы. 💡\n"
-                     "\n"
-                     "Жду твои вопросы! 🗣",
-                     reply_markup=menu(call))
+        Bot.send_message(call.from_user.id,
+                         "Привет! 🤖 Я - ZangerKZ, твой юридический помощник от KazNU! 🌐 \n"
+                         "\n"
+                         "Можешь задавать любые юридические вопросы. 💡\n"
+                         "\n"
+                         "Жду твои вопросы! 🗣",
+                         reply_markup=menu(call))
+    except Exception as ex:
+        send_error_for_admins(call, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
 
 
 def menu(message):
@@ -137,43 +225,49 @@ def start_new_dialog(message):
         Bot.send_message(message.from_user.id, text=content, reply_markup=menu(message))
 
     except Exception as ex:
-        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name)
+        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
 
 
 @Bot.callback_query_handler(func=lambda call: call.data == 'profile')
 @Bot.message_handler(func=lambda message: message.text == '👤 Мой профиль')
 def profile(message):
-    user = TelegramUsers.objects.get(id=message.from_user.id)
+    try:
+        user = TelegramUsers.objects.get(id=message.from_user.id)
 
-    text = f"👤: {user.first_name} {user.last_name} ({user.username})\n"
+        text = f"👤: {user.first_name} {user.last_name} ({user.username})\n"
 
-    if type(message) == types.Message:
-        Bot.send_message(user.id, text=text, reply_markup=menu(message))
-    elif type(message) == types.CallbackQuery:
-        Bot.edit_message_text(
-            chat_id=message.message.chat.id,
-            message_id=message.message.message_id,
-            text=text,
-        )
+        if type(message) == types.Message:
+            Bot.send_message(user.id, text=text, reply_markup=menu(message))
+        elif type(message) == types.CallbackQuery:
+            Bot.edit_message_text(
+                chat_id=message.message.chat.id,
+                message_id=message.message.message_id,
+                text=text,
+            )
+    except Exception as ex:
+        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
 
 
 @Bot.callback_query_handler(func=lambda call: call.data == 'positive')
 @Bot.callback_query_handler(func=lambda call: call.data == 'negative')
 @transaction.atomic
 def save_review(call):
-    user = TelegramUsers.objects.get(id=call.message.reply_to_message.from_user.id)
+    try:
+        user = TelegramUsers.objects.get(id=call.message.reply_to_message.from_user.id)
 
-    review = Reviews(
-        author=user,
-        question=call.message.reply_to_message.text,
-        answer=call.message.text,
-        review=call.data)
-    review.save()
+        review = Reviews(
+            author=user,
+            question=call.message.reply_to_message.text,
+            answer=call.message.text,
+            review=call.data)
+        review.save()
 
-    Bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.id, reply_markup=None)
-    Bot.send_message(call.message.reply_to_message.from_user.id,
-                     "Спасибо за ваш отзыв",
-                     reply_markup=menu(call.message))
+        Bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.id, reply_markup=None)
+        Bot.send_message(call.message.reply_to_message.from_user.id,
+                         "Спасибо за ваш отзыв",
+                         reply_markup=menu(call.message))
+    except Exception as ex:
+        send_error_for_admins(call, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
 
 
 def generate_gpt_response(prompt, message):
@@ -196,10 +290,10 @@ def generate_gpt_response(prompt, message):
 
         return completion.choices[0].message.content
     except RateLimitError as ex:
-        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name)
+        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
         return "❗️ Системная ошибка ❗️"
     except Exception as ex:
-        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name)
+        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
         return "❗️ Системная ошибка ❗️"
 
 
@@ -213,13 +307,14 @@ def load_text_from_files(file_paths):
     return text
 
 
-def send_error_for_admins(message, ex, method_name):
+def send_error_for_admins(message, ex, method_name, error_details):
     user_id = None
     if message is not None:
         Bot.send_message(message.from_user.id,
                          "⚠️ Произошла непредвиденная ошибка, сообщение об ошибке уже отправлено модерации.\n"
                          "Подождите пару минут и повторите попытку.")
         user_id = message.from_user.id
+    text_to_error_html(error_details)
     admins = TelegramUsers.objects.filter(is_staff=True)
     text = "❗️ Сообщение от системы ❗️\n" \
            f"User ID: {user_id}\n" \
@@ -262,4 +357,14 @@ def handle_messages(message):
 
             user.add_message("assistant", gpt_response)
     except Exception as ex:
-        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name)
+        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
+
+
+def text_to_error_html(error_details):
+    try:
+        app_templates_directory = os.path.join(settings.BASE_DIR, "ZangerKZ", 'templates')
+        with open(app_templates_directory + "/zangerkz/error.html",
+                  'w', encoding='utf-8') as file:
+            file.write(str(error_details))
+    except Exception as ex:
+        logger.error(ex)
