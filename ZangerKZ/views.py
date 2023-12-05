@@ -8,7 +8,7 @@ import traceback
 import mysql.connector
 
 import telebot
-# from django.contrib.sites.models import Site
+from django.contrib.sites.models import Site
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
@@ -27,8 +27,8 @@ TOKEN = os.getenv("TOKEN_ZANGERKZ")
 
 API_KEY = os.getenv("ZANGERKZ_API_KEY")
 
-# URL = Site.objects.get_current().domain
-URL = ""
+URL = Site.objects.get_current().domain
+
 WEBHOOK_URL = URL + "zangerkz/webhook/"
 
 Bot = telebot.TeleBot(TOKEN)
