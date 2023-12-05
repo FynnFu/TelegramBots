@@ -7,7 +7,7 @@ import time
 import traceback
 import mysql.connector
 import telebot
-# from django.contrib.sites.models import Site
+from django.contrib.sites.models import Site
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
@@ -24,9 +24,8 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN_ANTIBOT")
 
-# URL = Site.objects.get_current().domain
+URL = Site.objects.get_current().domain
 
-URL = ''
 WEBHOOK_URL = URL + "antibot/webhook/"
 
 Bot = telebot.TeleBot(TOKEN)
