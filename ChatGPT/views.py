@@ -15,7 +15,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from django.db import transaction
-from django.contrib.sites.models import Site
+# from django.contrib.sites.models import Site
 from django.shortcuts import render, redirect
 from openai import OpenAI, RateLimitError
 from telebot import types
@@ -33,8 +33,8 @@ TOKEN = os.getenv("TOKEN_GPT")
 
 API_KEY = os.getenv("GPT_API_KEY")
 
-URL = Site.objects.get_current().domain
-
+# URL = Site.objects.get_current().domain
+URL = ""
 WEBHOOK_URL = URL + "chatgpt/webhook/"
 
 Bot = telebot.TeleBot(TOKEN)
