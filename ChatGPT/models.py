@@ -184,3 +184,12 @@ class Tips(models.Model):
     class Meta:
         verbose_name = "Чаевые"
         verbose_name_plural = "Чаевые"
+
+
+class Tokens(models.Model):
+    openai_api_key = models.CharField(max_length=2000, verbose_name="OpenAI API key")
+    telegram_bot_token = models.CharField(max_length=2000, verbose_name="Telegram Bot Token")
+
+    class Meta:
+        verbose_name = "Ключ"
+        verbose_name_plural = "Ключи"
