@@ -42,7 +42,6 @@ class Channels(models.Model):
 
 
 class Tokens(models.Model):
-    openai_api_key = models.CharField(max_length=2000, verbose_name="OpenAI API key")
     telegram_bot_token = models.CharField(max_length=2000, verbose_name="Telegram Bot Token")
 
     class Meta:

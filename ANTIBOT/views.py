@@ -17,12 +17,15 @@ from dotenv import load_dotenv
 from telebot.apihelper import ApiTelegramException
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from ANTIBOT.models import TelegramUsers, Channels
+from ANTIBOT.models import TelegramUsers, Channels, Tokens
 from TelegramBots import settings
 
 load_dotenv()
 
-TOKEN = os.getenv("TOKEN_ANTIBOT")
+if Tokens.objects.exists():
+    TOKEN = Tokens.objects.first().telegram_bot_token
+else:
+    TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
 
 URL = Site.objects.get_current().domain
 

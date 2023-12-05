@@ -23,9 +23,12 @@ from ZangerKZ.models import *
 
 load_dotenv()
 
-TOKEN = os.getenv("TOKEN_ZANGERKZ")
-
-API_KEY = os.getenv("ZANGERKZ_API_KEY")
+if Tokens.objects.exists():
+    TOKEN = Tokens.objects.first().telegram_bot_token
+    API_KEY = Tokens.objects.first().openai_api_key
+else:
+    TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
+    API_KEY = ""
 
 URL = Site.objects.get_current().domain
 

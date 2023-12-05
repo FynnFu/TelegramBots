@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from ZangerKZ.models import TelegramUsers, Reviews
+from ZangerKZ.models import TelegramUsers, Reviews, Tokens
 
 
 # Register your models here.
@@ -14,5 +14,10 @@ class ReviewsAdmin(admin.ModelAdmin):
     list_filter = ('review', )
 
 
+class TokensAdmin(admin.ModelAdmin):
+    list_display = ('openai_api_key', 'telegram_bot_token', )
+
+
 admin.site.register(TelegramUsers, TelegramUsersAdmin)
 admin.site.register(Reviews, ReviewsAdmin)
+admin.site.register(Tokens, TokensAdmin)

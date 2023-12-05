@@ -25,13 +25,16 @@ from telegram import constants
 from telegram.helpers import escape_markdown
 
 from TelegramBots import settings
-from ChatGPT.models import TelegramUsers, Promocodes, Channels, GPTModels, Prices, Tips
+from ChatGPT.models import TelegramUsers, Promocodes, Channels, GPTModels, Prices, Tips, Tokens
 
 load_dotenv()
 
-TOKEN = os.getenv("TOKEN_GPT")
-
-API_KEY = os.getenv("GPT_API_KEY")
+if Tokens.objects.exists():
+    TOKEN = Tokens.objects.first().telegram_bot_token
+    API_KEY = Tokens.objects.first().openai_api_key
+else:
+    TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
+    API_KEY = ""
 
 URL = Site.objects.get_current().domain
 
