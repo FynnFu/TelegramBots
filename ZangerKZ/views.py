@@ -49,6 +49,37 @@ def requires_staff(func):
     return wrapper
 
 
+def requires_db(func):
+    @Bot.callback_query_handler(func=lambda call: call.data == 'check_subscribe')
+    @transaction.atomic
+    def wrapper(message, *args, **kwargs):
+        try:
+            if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
+                user = TelegramUsers(
+                    id=message.from_user.id,
+                    username=message.from_user.username,
+                    first_name=message.from_user.first_name,
+                    last_name=message.from_user.last_name,
+                    blocked=False,
+                    is_staff=False,
+                )
+                user.save()
+                time.sleep(1)
+
+            user = TelegramUsers.objects.get(id=message.from_user.id)
+            if user.is_blocked():
+                Bot.send_message(message.from_user.id,
+                                 "‼️Вы заблокированы ‼️\n")
+                return None
+
+            return func(message, *args, **kwargs)
+
+        except Exception as ex:
+            send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
+
+    return wrapper
+
+
 class Console:
     botThread = None
 
@@ -161,45 +192,19 @@ class Console:
 
 
 @Bot.message_handler(commands=['start'])
+@requires_db
 def start(message):
     try:
-        markup = types.InlineKeyboardMarkup()
-        btn1 = types.InlineKeyboardButton(text='Я согласен(-на) ✅', callback_data='agree')
-        markup.add(btn1)
-        Bot.send_message(message.from_user.id, "Данный бот находится на этапе разработки!\n"
-                                               "Для улучшения качества сервиса происходит сбор данных, "
-                                               "для продолжения нужно Ваше согласие", reply_markup=markup)
-
-    except Exception as ex:
-        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
-
-
-@Bot.callback_query_handler(func=lambda call: call.data == 'agree')
-@transaction.atomic
-def agree(call):
-    try:
-        if not TelegramUsers.objects.filter(id=call.from_user.id).exists():
-            user = TelegramUsers(
-                id=call.from_user.id,
-                username=call.from_user.username,
-                first_name=call.from_user.first_name,
-                last_name=call.from_user.last_name,
-                blocked=False,
-                is_staff=False,
-                messages='[]'
-            )
-            user.save()
-            time.sleep(1)
-
-        Bot.send_message(call.from_user.id,
+        Bot.send_message(message.from_user.id,
                          "Привет! 🤖 Я - ZangerKZ, твой юридический помощник от KazNU! 🌐 \n"
                          "\n"
                          "Можешь задавать любые юридические вопросы. 💡\n"
                          "\n"
                          "Жду твои вопросы! 🗣",
-                         reply_markup=menu(call))
+                         reply_markup=menu(message))
+
     except Exception as ex:
-        send_error_for_admins(call, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
+        send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
 
 
 def menu(message):
@@ -216,6 +221,7 @@ def menu(message):
 @Bot.message_handler(commands=['start_new_dialog'])
 @Bot.callback_query_handler(func=lambda call: call.data == 'start_new_dialog')
 @Bot.message_handler(func=lambda message: message.text == '➕ Начать новый диалог')
+@requires_db
 def start_new_dialog(message):
     try:
         user_id = message.from_user.id
@@ -231,6 +237,7 @@ def start_new_dialog(message):
 
 @Bot.callback_query_handler(func=lambda call: call.data == 'profile')
 @Bot.message_handler(func=lambda message: message.text == '👤 Мой профиль')
+@requires_db
 def profile(message):
     try:
         user = TelegramUsers.objects.get(id=message.from_user.id)
@@ -252,6 +259,7 @@ def profile(message):
 @Bot.callback_query_handler(func=lambda call: call.data == 'positive')
 @Bot.callback_query_handler(func=lambda call: call.data == 'negative')
 @transaction.atomic
+@requires_db
 def save_review(call):
     try:
         user = TelegramUsers.objects.get(id=call.message.reply_to_message.from_user.id)
