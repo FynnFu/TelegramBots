@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 
+import ngrok
 from dotenv import load_dotenv
 from .configuration import LOGGING
 
@@ -45,6 +46,8 @@ ALLOWED_HOSTS = ['.awsapprunner.com', 'fynnfu.ru', '127.0.0.1', '.ngrok-free.app
 
 CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app', 'https://*.loclx.io', 'https://127.0.0.1']
 
+# listener = ngrok.forward("https://127.0.0.1:80", authtoken_from_env=True)
+# print(listener.url())
 # CSRF_COOKIE_DOMAIN = 'ngrok-free.app'
 # Application definition
 
