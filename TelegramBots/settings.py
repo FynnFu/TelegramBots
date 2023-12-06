@@ -41,9 +41,9 @@ DEBUG = True
 
 LOGGING = LOGGING
 
-ALLOWED_HOSTS = ['.awsapprunner.com', 'fynnfu.ru', '127.0.0.1', '.ngrok-free.app']
+ALLOWED_HOSTS = ['.awsapprunner.com', 'fynnfu.ru', '127.0.0.1', '.ngrok-free.app', '.loclx.io']
 
-CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app', 'https://127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app', 'https://*.loclx.io', 'https://127.0.0.1']
 
 # CSRF_COOKIE_DOMAIN = 'ngrok-free.app'
 # Application definition
