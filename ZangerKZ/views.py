@@ -17,7 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from openai import RateLimitError, OpenAI
 from telebot import types
-
+from django.db import connection
 from TelegramBots import settings
 from ZangerKZ.models import *
 
