@@ -8,7 +8,7 @@ import traceback
 import mysql.connector
 import telebot
 from django.contrib.sites.models import Site
-from django.db import transaction
+from django.db import transaction, connections
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -22,20 +22,26 @@ from TelegramBots import settings
 
 load_dotenv()
 
-if Tokens.objects.exists():
-    TOKEN = Tokens.objects.first().telegram_bot_token
-else:
-    TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
+logger = logging.getLogger('django')
 
-URL = Site.objects.get_current().domain
+try:
+    if Tokens.objects.exists():
+        TOKEN = Tokens.objects.first().telegram_bot_token
+    else:
+        TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
+
+    URL = Site.objects.get_current().domain
+
+except Exception as e:
+    TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
+    URL = "https://example.com/"
+    logger.error(e)
 
 WEBHOOK_URL = URL + "antibot/webhook/"
 
 Bot = telebot.TeleBot(TOKEN)
 
 CHANNEL_ID = -1002033981480
-
-logger = logging.getLogger('django')
 
 
 def requires_staff(func):
@@ -178,6 +184,13 @@ def approve_request(message):
 @transaction.atomic
 def success(call):
     try:
+        try:
+            Site.objects.get_current().domain
+        except Exception as ex:
+            connections['default'].close()
+            connections['default'].connect()
+            logger.error(ex)
+
         if not TelegramUsers.objects.filter(id=call.from_user.id).exists():
             user = TelegramUsers(
                 id=call.from_user.id,

@@ -14,7 +14,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
-from django.db import transaction
+from django.db import transaction, connections
 from django.contrib.sites.models import Site
 from django.shortcuts import render, redirect
 from openai import OpenAI, RateLimitError
@@ -29,14 +29,23 @@ from ChatGPT.models import TelegramUsers, Promocodes, Channels, GPTModels, Price
 
 load_dotenv()
 
-if Tokens.objects.exists():
-    TOKEN = Tokens.objects.first().telegram_bot_token
-    API_KEY = Tokens.objects.first().openai_api_key
-else:
+logger = logging.getLogger('django')
+
+try:
+    if Tokens.objects.exists():
+        TOKEN = Tokens.objects.first().telegram_bot_token
+        API_KEY = Tokens.objects.first().openai_api_key
+    else:
+        TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
+        API_KEY = ""
+
+    URL = Site.objects.get_current().domain
+
+except Exception as e:
     TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
     API_KEY = ""
-
-URL = Site.objects.get_current().domain
+    URL = "https://example.com/"
+    logger.error(e)
 
 WEBHOOK_URL = URL + "chatgpt/webhook/"
 
@@ -52,8 +61,6 @@ commands = [
 Bot.set_my_commands(commands)
 
 client = OpenAI(api_key=API_KEY)
-
-logger = logging.getLogger('django')
 
 
 def requires_staff(func):
@@ -192,6 +199,13 @@ def requires_subscription(func):
     @transaction.atomic
     def wrapper(message, *args, **kwargs):
         try:
+            try:
+                Site.objects.get_current().domain
+            except Exception as ex:
+                connections['default'].close()
+                connections['default'].connect()
+                logger.error(ex)
+
             if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
                 user = TelegramUsers(
                     id=message.from_user.id,

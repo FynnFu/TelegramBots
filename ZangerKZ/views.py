@@ -17,28 +17,36 @@ from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from openai import RateLimitError, OpenAI
 from telebot import types
-from django.db import connection
+from django.db import connections
 from TelegramBots import settings
 from ZangerKZ.models import *
 
 load_dotenv()
 
-if Tokens.objects.exists():
-    TOKEN = Tokens.objects.first().telegram_bot_token
-    API_KEY = Tokens.objects.first().openai_api_key
-else:
+logger = logging.getLogger('django')
+
+try:
+    if Tokens.objects.exists():
+        TOKEN = Tokens.objects.first().telegram_bot_token
+        API_KEY = Tokens.objects.first().openai_api_key
+    else:
+        TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
+        API_KEY = ""
+
+    URL = Site.objects.get_current().domain
+
+except Exception as e:
     TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
     API_KEY = ""
+    URL = "https://example.com/"
+    logger.error(e)
 
-URL = Site.objects.get_current().domain
 
 WEBHOOK_URL = URL + "zangerkz/webhook/"
 
 Bot = telebot.TeleBot(TOKEN)
 
 client = OpenAI(api_key=API_KEY)
-
-logger = logging.getLogger('django')
 
 
 def requires_staff(func):
@@ -57,6 +65,13 @@ def requires_db(func):
     @transaction.atomic
     def wrapper(message, *args, **kwargs):
         try:
+            try:
+                Site.objects.get_current().domain
+            except Exception as ex:
+                connections['default'].close()
+                connections['default'].connect()
+                logger.error(ex)
+
             if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
                 user = TelegramUsers(
                     id=message.from_user.id,
@@ -68,6 +83,7 @@ def requires_db(func):
                 user.save()
                 time.sleep(1)
 
+
             user = TelegramUsers.objects.get(id=message.from_user.id)
             if user.is_blocked():
                 Bot.send_message(message.from_user.id,
@@ -75,7 +91,6 @@ def requires_db(func):
                 return None
 
             return func(message, *args, **kwargs)
-
         except Exception as ex:
             send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
 
@@ -339,6 +354,7 @@ def send_error_for_admins(message, ex, method_name, error_details):
 
 
 @Bot.message_handler(func=lambda message: True)
+@requires_db
 def handle_messages(message):
     try:
         user_id = message.from_user.id
