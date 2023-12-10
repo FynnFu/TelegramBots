@@ -83,7 +83,6 @@ def requires_db(func):
                 user.save()
                 time.sleep(1)
 
-
             user = TelegramUsers.objects.get(id=message.from_user.id)
             if user.is_blocked():
                 Bot.send_message(message.from_user.id,
