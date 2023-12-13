@@ -6,7 +6,6 @@ import threading
 import time
 import traceback
 import mysql.connector
-
 import telebot
 from django.contrib.sites.models import Site
 from django.db import transaction
