@@ -6,15 +6,11 @@ import threading
 import logging
 import time
 import traceback
-import mysql.connector
-
 import telebot
-
-from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
-from django.db import transaction, connections
+from django.db import transaction, connections, connection
 from django.contrib.sites.models import Site
 from django.shortcuts import render, redirect
 from openai import OpenAI, RateLimitError
@@ -129,26 +125,16 @@ class Console:
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
             return str(result.stdout), str(result.stderr)
         if value == 'mysql':
-            connection = mysql.connector.connect(
-                host=settings.DATABASES['default']['HOST'],
-                user=settings.DATABASES['default']['USER'],
-                password=settings.DATABASES['default']['PASSWORD'],
-                database=settings.DATABASES['default']['NAME']
-            )
-            cursor = connection.cursor()
             try:
-                cursor.execute(command)
+                with connection.cursor() as cursor:
+                    cursor.execute(command)
 
-                result = cursor.fetchall()
+                    result = cursor.fetchall()
 
-                result = '\n'.join(str(item) for item in result)
-                return str(result), None
+                    result = '\n'.join(str(item) for item in result)
+                    return str(result), None
             except Exception as ex:
                 return None, str(ex)
-            finally:
-                if 'connection' in locals() and connection.is_connected():
-                    cursor.close()
-                    connection.close()
 
     @staticmethod
     @requires_staff
@@ -199,13 +185,6 @@ def requires_subscription(func):
     @transaction.atomic
     def wrapper(message, *args, **kwargs):
         try:
-            try:
-                Site.objects.get_current().domain
-            except Exception as ex:
-                connections['default'].close()
-                connections['default'].connect()
-                logger.error(ex)
-
             if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
                 user = TelegramUsers(
                     id=message.from_user.id,
