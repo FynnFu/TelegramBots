@@ -192,7 +192,6 @@ def requires_subscription(func):
                 user=settings.DB_USER,
                 password=settings.DB_PASSWORD,
                 database=settings.DATABASES,
-                charset='utf8mb4',
             )
             conn.ping(reconnect=True)
 
