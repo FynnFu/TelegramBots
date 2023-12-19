@@ -6,6 +6,8 @@ import threading
 import time
 import traceback
 import telebot
+import pymysql
+from pymysql.cursors import DictCursor
 from django.contrib.sites.models import Site
 from django.db import transaction, connection
 from django.http import JsonResponse
@@ -15,7 +17,6 @@ from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from openai import RateLimitError, OpenAI
 from telebot import types
-from django.db import connections
 from TelegramBots import settings
 from ZangerKZ.models import *
 
@@ -38,7 +39,6 @@ except Exception as e:
     API_KEY = ""
     URL = "https://example.com/"
     logger.error(e)
-
 
 WEBHOOK_URL = URL + "zangerkz/webhook/"
 
@@ -63,6 +63,16 @@ def requires_db(func):
     @transaction.atomic
     def wrapper(message, *args, **kwargs):
         try:
+            conn = pymysql.connect(
+                host=settings.DB_HOST,
+                user=settings.DB_USER,
+                password=settings.DB_PASSWORD,
+                database=settings.DATABASES,
+                charset='utf8mb4',
+                cursorclass=DictCursor
+            )
+            conn.ping(reconnect=True)
+
             if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
                 user = TelegramUsers(
                     id=message.from_user.id,

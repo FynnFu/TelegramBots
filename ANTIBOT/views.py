@@ -5,14 +5,17 @@ import subprocess
 import threading
 import time
 import traceback
+
+import pymysql
 import telebot
 from django.contrib.sites.models import Site
-from django.db import transaction, connections, connection
+from django.db import transaction, connection
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
+from pymysql.cursors import DictCursor
 from telebot.apihelper import ApiTelegramException
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -173,6 +176,16 @@ def approve_request(message):
 @transaction.atomic
 def success(call):
     try:
+        conn = pymysql.connect(
+            host=settings.DB_HOST,
+            user=settings.DB_USER,
+            password=settings.DB_PASSWORD,
+            database=settings.DATABASES,
+            charset='utf8mb4',
+            cursorclass=DictCursor
+        )
+        conn.ping(reconnect=True)
+
         if not TelegramUsers.objects.filter(id=call.from_user.id).exists():
             user = TelegramUsers(
                 id=call.from_user.id,
