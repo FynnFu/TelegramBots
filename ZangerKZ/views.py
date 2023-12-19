@@ -63,15 +63,15 @@ def requires_db(func):
     @transaction.atomic
     def wrapper(message, *args, **kwargs):
         try:
-            # conn = pymysql.connect(
-            #     host=settings.DB_HOST,
-            #     user=settings.DB_USER,
-            #     password=settings.DB_PASSWORD,
-            #     database=settings.DATABASES,
-            #     charset='utf8mb4',
-            #     cursorclass=DictCursor
-            # )
-            # conn.ping(reconnect=True)
+            conn = pymysql.connect(
+                host=settings.DB_HOST,
+                user=settings.DB_USER,
+                password=settings.DB_PASSWORD,
+                database=settings.DB_NAME,
+                charset='utf8mb4',
+                cursorclass=DictCursor
+            )
+            conn.ping(reconnect=True)
 
             if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
                 user = TelegramUsers(
