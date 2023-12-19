@@ -193,7 +193,7 @@ def requires_subscription(func):
                 password=settings.DB_PASSWORD,
                 database=settings.DATABASES,
             )
-            conn.ping(reconnect=True)
+            # conn.ping(reconnect=True)
 
             if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
                 user = TelegramUsers(
