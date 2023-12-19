@@ -16,6 +16,7 @@ from django.db import transaction, connection
 from django.contrib.sites.models import Site
 from django.shortcuts import render, redirect
 from openai import OpenAI, RateLimitError
+from pymysql.cursors import DictCursor
 from telebot import types
 from telebot.types import BotCommand, LabeledPrice
 from dotenv import load_dotenv
@@ -191,9 +192,11 @@ def requires_subscription(func):
                 host=settings.DB_HOST,
                 user=settings.DB_USER,
                 password=settings.DB_PASSWORD,
-                database=settings.DATABASES,
+                database=settings.DB_NAME,
+                charset='utf8mb4',
+                cursorclass=DictCursor
             )
-            # conn.ping(reconnect=True)
+            conn.ping(reconnect=True)
 
             if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
                 user = TelegramUsers(
