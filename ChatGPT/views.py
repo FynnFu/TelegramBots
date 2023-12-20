@@ -43,10 +43,10 @@ try:
 except Exception as e:
     TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
     API_KEY = ""
-    URL = "https://example.com/"
+    URL = "https://example.com"
     logger.error(e)
 
-WEBHOOK_URL = URL + "chatgpt/webhook/"
+WEBHOOK_URL = URL + "/chatgpt/webhook/"
 
 Bot = telebot.TeleBot(TOKEN)
 

@@ -37,10 +37,10 @@ try:
 except Exception as e:
     TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
     API_KEY = ""
-    URL = "https://example.com/"
+    URL = "https://example.com"
     logger.error(e)
 
-WEBHOOK_URL = URL + "zangerkz/webhook/"
+WEBHOOK_URL = URL + "/zangerkz/webhook/"
 
 Bot = telebot.TeleBot(TOKEN)
 
@@ -350,8 +350,12 @@ def send_error_for_admins(message, ex, method_name, error_details):
            f"Error type: {type(ex).__name__}\n" \
            f"Error message: {str(ex)}\n"
     logger.error(text)
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton(text="Страница с ошибкой", url=f"{URL}{reverse(f'ZangerKZ:error')}")
+    )
     for admin in admins:
-        Bot.send_message(admin.id, text)
+        Bot.send_message(admin.id, text, reply_markup=markup)
     print(text)
 
 

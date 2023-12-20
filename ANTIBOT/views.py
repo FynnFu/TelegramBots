@@ -9,13 +9,14 @@ import traceback
 import pymysql
 import telebot
 from django.contrib.sites.models import Site
-from django.db import transaction, connection
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from pymysql.cursors import DictCursor
+from telebot import types
 from telebot.apihelper import ApiTelegramException
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -104,13 +105,23 @@ class Console:
             return str(result.stdout), str(result.stderr)
         if value == 'mysql':
             try:
-                with connection.cursor() as cursor:
-                    cursor.execute(command)
+                with pymysql.connect(
+                        host=settings.DB_HOST,
+                        user=settings.DB_USER,
+                        password=settings.DB_PASSWORD,
+                        database=settings.DB_NAME,
+                        charset='utf8mb4',
+                        cursorclass=DictCursor
+                ) as connection:
+                    with connection.cursor() as cursor:
+                        cursor.execute(command)
 
-                    result = cursor.fetchall()
+                        result = cursor.fetchall()
 
-                    result = '\n'.join(str(item) for item in result)
-                    return str(result), None
+                        result = '\n'.join(str(item) for item in result)
+                        return str(result), None
+            except pymysql.Error as ex:
+                return None, str(ex)
             except Exception as ex:
                 return None, str(ex)
 
@@ -176,27 +187,27 @@ def approve_request(message):
 @transaction.atomic
 def success(call):
     try:
-        conn = pymysql.connect(
-            host=settings.DB_HOST,
-            user=settings.DB_USER,
-            password=settings.DB_PASSWORD,
-            database=settings.DB_NAME,
-            charset='utf8mb4',
-            cursorclass=DictCursor
-        )
-        conn.ping(reconnect=True)
+        with pymysql.connect(
+                host=settings.DB_HOST,
+                user=settings.DB_USER,
+                password=settings.DB_PASSWORD,
+                database=settings.DB_NAME,
+                charset='utf8mb4',
+                cursorclass=DictCursor
+        ) as connection:
+            connection.ping(reconnect=True)
 
-        if not TelegramUsers.objects.filter(id=call.from_user.id).exists():
-            user = TelegramUsers(
-                id=call.from_user.id,
-                username=call.from_user.username,
-                first_name=call.from_user.first_name,
-                last_name=call.from_user.last_name,
-                blocked=False,
-                is_staff=False
-            )
-            user.save()
-            time.sleep(1)
+            if not TelegramUsers.objects.filter(id=call.from_user.id).exists():
+                user = TelegramUsers(
+                    id=call.from_user.id,
+                    username=call.from_user.username,
+                    first_name=call.from_user.first_name,
+                    last_name=call.from_user.last_name,
+                    blocked=False,
+                    is_staff=False
+                )
+                user.save()
+                time.sleep(1)
 
         try:
             Bot.approve_chat_join_request(CHANNEL_ID, call.from_user.id)
@@ -234,8 +245,12 @@ def send_error_for_admins(message, ex, method_name, error_details):
            f"Error type: {type(ex).__name__}\n" \
            f"Error message: {str(ex)}\n"
     logger.error(text)
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton(text="Страница с ошибкой", url=f"{URL}{reverse(f'ANTIBOT:error')}")
+    )
     for admin in admins:
-        Bot.send_message(admin.id, text)
+        Bot.send_message(admin.id, text, reply_markup=markup)
 
 
 def text_to_error_html(error_details):
