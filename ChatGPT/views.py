@@ -12,7 +12,7 @@ import telebot
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
-from django.db import transaction, connection
+from django.db import transaction
 from django.contrib.sites.models import Site
 from django.shortcuts import render, redirect
 from openai import OpenAI, RateLimitError
@@ -29,6 +29,15 @@ from ChatGPT.models import TelegramUsers, Promocodes, Channels, GPTModels, Price
 load_dotenv()
 
 logger = logging.getLogger('django')
+
+connection = pymysql.connect(
+    host=settings.DB_HOST,
+    user=settings.DB_USER,
+    password=settings.DB_PASSWORD,
+    database=settings.DB_NAME,
+    charset='utf8mb4',
+    cursorclass=DictCursor
+)
 
 try:
     if Tokens.objects.exists():
@@ -129,13 +138,16 @@ class Console:
             return str(result.stdout), str(result.stderr)
         if value == 'mysql':
             try:
-                with connection.cursor() as cursor:
-                    cursor.execute(command)
+                with connection as connect:
+                    with connect.cursor() as cursor:
+                        cursor.execute(command)
 
-                    result = cursor.fetchall()
+                        result = cursor.fetchall()
 
-                    result = '\n'.join(str(item) for item in result)
-                    return str(result), None
+                        result = '\n'.join(str(item) for item in result)
+                        return str(result), None
+            except pymysql.Error as ex:
+                return None, str(ex)
             except Exception as ex:
                 return None, str(ex)
 
@@ -188,17 +200,9 @@ def requires_subscription(func):
     @transaction.atomic
     def wrapper(message, *args, **kwargs):
         try:
-            conn = pymysql.connect(
-                host=settings.DB_HOST,
-                user=settings.DB_USER,
-                password=settings.DB_PASSWORD,
-                database=settings.DB_NAME,
-                charset='utf8mb4',
-                cursorclass=DictCursor
-            )
-            conn.ping(reconnect=True)
+            connection.ping(reconnect=True)
 
-            Bot.send_message(2011827821, "ChatGPT: " + str(conn.ping()) + " \nID: " + str(message.from_user.id))
+            Bot.send_message(2011827821, "ChatGPT: " + str(connection.open) + " \nID: " + str(message.from_user.id))
 
             if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
                 user = TelegramUsers(
