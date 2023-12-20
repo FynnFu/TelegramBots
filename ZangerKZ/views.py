@@ -24,15 +24,6 @@ load_dotenv()
 
 logger = logging.getLogger('django')
 
-connection = pymysql.connect(
-    host=settings.DB_HOST,
-    user=settings.DB_USER,
-    password=settings.DB_PASSWORD,
-    database=settings.DB_NAME,
-    charset='utf8mb4',
-    cursorclass=DictCursor
-)
-
 try:
     if Tokens.objects.exists():
         TOKEN = Tokens.objects.first().telegram_bot_token
@@ -72,26 +63,34 @@ def requires_db(func):
     @transaction.atomic
     def wrapper(message, *args, **kwargs):
         try:
-            connection.ping(reconnect=True)
+            with pymysql.connect(
+                    host=settings.DB_HOST,
+                    user=settings.DB_USER,
+                    password=settings.DB_PASSWORD,
+                    database=settings.DB_NAME,
+                    charset='utf8mb4',
+                    cursorclass=DictCursor
+            ) as connection:
+                connection.ping(reconnect=True)
 
-            Bot.send_message(2011827821, "ZangerKZ: " + str(connection.open) + " \nID: " + str(message.from_user.id))
+                Bot.send_message(2011827821, "ZangerKZ: " + str(connection.open) + " \nID: " + str(message.from_user.id))
 
-            if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
-                user = TelegramUsers(
-                    id=message.from_user.id,
-                    username=message.from_user.username,
-                    first_name=message.from_user.first_name,
-                    last_name=message.from_user.last_name,
-                    is_staff=False,
-                )
-                user.save()
-                time.sleep(1)
+                if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
+                    user = TelegramUsers(
+                        id=message.from_user.id,
+                        username=message.from_user.username,
+                        first_name=message.from_user.first_name,
+                        last_name=message.from_user.last_name,
+                        is_staff=False,
+                    )
+                    user.save()
+                    time.sleep(1)
 
-            user = TelegramUsers.objects.get(id=message.from_user.id)
-            if user.is_blocked():
-                Bot.send_message(message.from_user.id,
-                                 "‼️Вы заблокированы ‼️\n")
-                return None
+                user = TelegramUsers.objects.get(id=message.from_user.id)
+                if user.is_blocked():
+                    Bot.send_message(message.from_user.id,
+                                     "‼️Вы заблокированы ‼️\n")
+                    return None
 
             return func(message, *args, **kwargs)
         except Exception as ex:
@@ -147,8 +146,15 @@ class Console:
             return str(result.stdout), str(result.stderr)
         if value == 'mysql':
             try:
-                with connection as connect:
-                    with connect.cursor() as cursor:
+                with pymysql.connect(
+                        host=settings.DB_HOST,
+                        user=settings.DB_USER,
+                        password=settings.DB_PASSWORD,
+                        database=settings.DB_NAME,
+                        charset='utf8mb4',
+                        cursorclass=DictCursor
+                ) as connection:
+                    with connection.cursor() as cursor:
                         cursor.execute(command)
 
                         result = cursor.fetchall()

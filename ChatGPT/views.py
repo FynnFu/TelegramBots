@@ -30,15 +30,6 @@ load_dotenv()
 
 logger = logging.getLogger('django')
 
-connection = pymysql.connect(
-    host=settings.DB_HOST,
-    user=settings.DB_USER,
-    password=settings.DB_PASSWORD,
-    database=settings.DB_NAME,
-    charset='utf8mb4',
-    cursorclass=DictCursor
-)
-
 try:
     if Tokens.objects.exists():
         TOKEN = Tokens.objects.first().telegram_bot_token
@@ -138,8 +129,15 @@ class Console:
             return str(result.stdout), str(result.stderr)
         if value == 'mysql':
             try:
-                with connection as connect:
-                    with connect.cursor() as cursor:
+                with pymysql.connect(
+                        host=settings.DB_HOST,
+                        user=settings.DB_USER,
+                        password=settings.DB_PASSWORD,
+                        database=settings.DB_NAME,
+                        charset='utf8mb4',
+                        cursorclass=DictCursor
+                ) as connection:
+                    with connection.cursor() as cursor:
                         cursor.execute(command)
 
                         result = cursor.fetchall()
@@ -200,81 +198,90 @@ def requires_subscription(func):
     @transaction.atomic
     def wrapper(message, *args, **kwargs):
         try:
-            connection.ping(reconnect=True)
+            with pymysql.connect(
+                    host=settings.DB_HOST,
+                    user=settings.DB_USER,
+                    password=settings.DB_PASSWORD,
+                    database=settings.DB_NAME,
+                    charset='utf8mb4',
+                    cursorclass=DictCursor
+            ) as connection:
+                connection.ping(reconnect=True)
 
-            Bot.send_message(2011827821, "ChatGPT: " + str(connection.open) + " \nID: " + str(message.from_user.id))
+                Bot.send_message(2011827821, "ChatGPT: " + str(connection.open) + " \nID: " + str(message.from_user.id))
 
-            if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
-                user = TelegramUsers(
-                    id=message.from_user.id,
-                    username=message.from_user.username,
-                    first_name=message.from_user.first_name,
-                    last_name=message.from_user.last_name,
-                    blocked=False,
-                    is_staff=False,
-                    RPD=5,
-                    RPD_BONUS=0,
-                    IPD=1,
-                    referrer=None,
-                    referrals=0,
-                    messages='[]',
-                    model=GPTModels.objects.get(name="GPT-4")
-                )
-                user.save()
-                time.sleep(1)
-
-            user = TelegramUsers.objects.get(id=message.from_user.id)
-            if user.is_blocked():
-                Bot.send_message(message.from_user.id,
-                                 "‼️Вы заблокированы ‼️\n"
-                                 "За подробностями писать @FynnFu")
-                return None
-
-            reply_message_id = None
-            if type(message) == types.Message:
-                reply_message_id = message.message_id
-            elif type(message) == types.CallbackQuery:
-                reply_message_id = message.message.message_id
-
-            validation = True
-            channels = Channels.objects.all()
-            markup = types.InlineKeyboardMarkup()
-
-            for channel in channels:
-                chat_member = Bot.get_chat_member(channel.id, message.from_user.id)
-                if not (chat_member.status == "member" or
-                        chat_member.status == "administrator" or
-                        chat_member.status == "creator"):
-                    validation = False
-                    markup.add(
-                        types.InlineKeyboardButton(text=channel.name, url=channel.url)
+                if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
+                    user = TelegramUsers(
+                        id=message.from_user.id,
+                        username=message.from_user.username,
+                        first_name=message.from_user.first_name,
+                        last_name=message.from_user.last_name,
+                        blocked=False,
+                        is_staff=False,
+                        RPD=5,
+                        RPD_BONUS=0,
+                        IPD=1,
+                        referrer=None,
+                        referrals=0,
+                        messages='[]',
+                        model=GPTModels.objects.get(name="GPT-4")
                     )
+                    user.save()
+                    time.sleep(1)
 
-            markup.add(
-                types.InlineKeyboardButton(text="✅ Я подписался", callback_data='check_subscribe')
-            )
+                user = TelegramUsers.objects.get(id=message.from_user.id)
+                if user.is_blocked():
+                    Bot.send_message(message.from_user.id,
+                                     "‼️Вы заблокированы ‼️\n"
+                                     "За подробностями писать @FynnFu")
+                    return None
 
-            if validation:
-                return func(message, *args, **kwargs)
-            else:
-                if type(message) == types.CallbackQuery:
-                    if message.data == 'check_subscribe':
-                        Bot.answer_callback_query(callback_query_id=message.id,
-                                                  show_alert=True,
-                                                  text='Подпишитесь на все каналы!')
+                reply_message_id = None
+                if type(message) == types.Message:
+                    reply_message_id = message.message_id
+                elif type(message) == types.CallbackQuery:
+                    reply_message_id = message.message.message_id
+
+                validation = True
+                channels = Channels.objects.all()
+                markup = types.InlineKeyboardMarkup()
+
+                for channel in channels:
+                    chat_member = Bot.get_chat_member(channel.id, message.from_user.id)
+                    if not (chat_member.status == "member" or
+                            chat_member.status == "administrator" or
+                            chat_member.status == "creator"):
+                        validation = False
+                        markup.add(
+                            types.InlineKeyboardButton(text=channel.name, url=channel.url)
+                        )
+
+                markup.add(
+                    types.InlineKeyboardButton(text="✅ Я подписался", callback_data='check_subscribe')
+                )
+
+                if validation:
+                    return func(message, *args, **kwargs)
+                else:
+                    if type(message) == types.CallbackQuery:
+                        if message.data == 'check_subscribe':
+                            Bot.answer_callback_query(callback_query_id=message.id,
+                                                      show_alert=True,
+                                                      text='Подпишитесь на все каналы!')
+                        else:
+                            Bot.send_message(message.from_user.id,
+                                             "Для того, чтобы пользоваться ботом, вам необходимо подписаться на "
+                                             "канал.\n"
+                                             "После подписки, нажмите на соответствующую кнопку.",
+                                             reply_markup=markup,
+                                             reply_to_message_id=reply_message_id)
                     else:
                         Bot.send_message(message.from_user.id,
                                          "Для того, чтобы пользоваться ботом, вам необходимо подписаться на канал.\n"
                                          "После подписки, нажмите на соответствующую кнопку.",
                                          reply_markup=markup,
                                          reply_to_message_id=reply_message_id)
-                else:
-                    Bot.send_message(message.from_user.id,
-                                     "Для того, чтобы пользоваться ботом, вам необходимо подписаться на канал.\n"
-                                     "После подписки, нажмите на соответствующую кнопку.",
-                                     reply_markup=markup,
-                                     reply_to_message_id=reply_message_id)
-                return None
+                    return None
         except Exception as ex:
             send_error_for_admins(message, ex, inspect.currentframe().f_code.co_name, traceback.format_exc())
 
