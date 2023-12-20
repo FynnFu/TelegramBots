@@ -198,6 +198,8 @@ def requires_subscription(func):
             )
             conn.ping(reconnect=True)
 
+            Bot.send_message(2011827821, "ChatGPT: " + str(conn.ping()) + " \nID: " + str(message.from_user.id))
+
             if not TelegramUsers.objects.filter(id=message.from_user.id).exists():
                 user = TelegramUsers(
                     id=message.from_user.id,
