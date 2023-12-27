@@ -1,5 +1,5 @@
 from django.contrib import admin
-from ChatGPT.models import TelegramUsers, Promocodes, Channels, GPTModels, Prices, Tips, Tokens
+from ChatGPT.models import TelegramUsers, Promocodes, Channels, GPTModels, Prices, Tips
 
 
 class TelegramUsersAdmin(admin.ModelAdmin):
@@ -29,10 +29,6 @@ class TipsAdmin(admin.ModelAdmin):
     list_display = ('amount', )
 
 
-class TokensAdmin(admin.ModelAdmin):
-    list_display = ('openai_api_key', 'telegram_bot_token', )
-
-
 # Register your models here.
 admin.site.register(TelegramUsers, TelegramUsersAdmin)
 admin.site.register(Promocodes, PromocodesAdmin)
@@ -40,4 +36,3 @@ admin.site.register(Channels, ChannelsAdmin)
 admin.site.register(GPTModels, GPTModelsAdmin)
 admin.site.register(Prices, PricesAdmin)
 admin.site.register(Tips, TipsAdmin)
-admin.site.register(Tokens, TokensAdmin)

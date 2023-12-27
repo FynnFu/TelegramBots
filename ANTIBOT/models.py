@@ -39,11 +39,3 @@ class Channels(models.Model):
     class Meta:
         verbose_name = "Канал"
         verbose_name_plural = "Каналы"
-
-
-class Tokens(models.Model):
-    telegram_bot_token = models.CharField(max_length=2000, verbose_name="Telegram Bot Token")
-
-    class Meta:
-        verbose_name = "Ключ"
-        verbose_name_plural = "Ключи"

@@ -24,31 +24,26 @@ from telegram import constants
 from telegram.helpers import escape_markdown
 
 from TelegramBots import settings
-from ChatGPT.models import TelegramUsers, Promocodes, Channels, GPTModels, Prices, Tips, Tokens
+from ChatGPT.models import TelegramUsers, Promocodes, Channels, GPTModels, Prices, Tips
 
 load_dotenv()
 
 logger = logging.getLogger('django')
 
 try:
-    if Tokens.objects.exists():
-        TOKEN = Tokens.objects.first().telegram_bot_token
-        API_KEY = Tokens.objects.first().openai_api_key
-    else:
-        TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
-        API_KEY = ""
-
-    URL = Site.objects.get_current().domain
-
+    URL = Site.objects.get_current().domain + "/chatgpt"
 except Exception as e:
-    TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
-    API_KEY = ""
-    URL = "https://example.com"
+    URL = "https://example.com/chatgpt"
     logger.error(e)
 
-WEBHOOK_URL = URL + "/chatgpt/webhook/"
+WEBHOOK_URL = URL + "/webhook/"
+
+TOKEN = os.getenv("TOKEN_CHATGPT")
+API_KEY = os.getenv("API_KEY_CHATGPT")
 
 Bot = telebot.TeleBot(TOKEN)
+
+client = OpenAI(api_key=API_KEY)
 
 commands = [
     BotCommand('start', '🔄 Запустить/перезапустить бота'),
@@ -58,8 +53,6 @@ commands = [
 ]
 
 Bot.set_my_commands(commands)
-
-client = OpenAI(api_key=API_KEY)
 
 
 def requires_staff(func):

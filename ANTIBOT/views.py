@@ -20,7 +20,7 @@ from telebot import types
 from telebot.apihelper import ApiTelegramException
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from ANTIBOT.models import TelegramUsers, Channels, Tokens
+from ANTIBOT.models import TelegramUsers, Channels
 from TelegramBots import settings
 
 load_dotenv()
@@ -28,19 +28,14 @@ load_dotenv()
 logger = logging.getLogger('django')
 
 try:
-    if Tokens.objects.exists():
-        TOKEN = Tokens.objects.first().telegram_bot_token
-    else:
-        TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
-
-    URL = Site.objects.get_current().domain
-
+    URL = Site.objects.get_current().domain + "/antibot"
 except Exception as e:
-    TOKEN = "6524376393:AAGQEw6zkFNZ1Mz86XyPRrG18IbmhdmbO4w"
-    URL = "https://example.com/"
+    URL = "https://example.com/antibot"
     logger.error(e)
 
-WEBHOOK_URL = URL + "antibot/webhook/"
+WEBHOOK_URL = URL + "/webhook/"
+
+TOKEN = os.getenv("TOKEN_ANTIBOT")
 
 Bot = telebot.TeleBot(TOKEN)
 
